@@ -90,18 +90,19 @@ class SEDR_Train:
 
     def process(self):
         self.model.eval()
-        latent_z, _, _, _, q, feat_x, gnn_z = self.model(self.node_X, self.adj_norm)
+        latent_z, _, _, feat_de, q, feat_x, gnn_z = self.model(self.node_X, self.adj_norm)
         latent_z = latent_z.data.cpu().numpy()
         q = q.data.cpu().numpy()
         feat_x = feat_x.data.cpu().numpy()
         gnn_z = gnn_z.data.cpu().numpy()
-        return latent_z, q, feat_x, gnn_z
+        feat_de = feat_de.data.cpu().numpy()
+        return latent_z, q, feat_x, gnn_z, feat_de
 
     def train_with_dec(self):
         # initialize cluster parameter
         self.train_without_dec()
         kmeans = KMeans(n_clusters=self.params.dec_cluster_n, n_init=self.params.dec_cluster_n * 2, random_state=42)
-        test_z, _, _, _ = self.process()
+        test_z, _, _, _, _ = self.process()
         y_pred_last = np.copy(kmeans.fit_predict(test_z))
 
         self.model.cluster_layer.data = torch.tensor(kmeans.cluster_centers_).to(self.device)
@@ -112,7 +113,7 @@ class SEDR_Train:
         for epoch_id in range(self.epochs):
             # DEC clustering update
             if epoch_id % self.params.dec_interval == 0:
-                _, tmp_q, _, _ = self.process()
+                _, tmp_q, _, _, _ = self.process()
                 tmp_p = target_distribution(torch.Tensor(tmp_q))
                 y_pred = tmp_p.cpu().numpy().argmax(1)
                 delta_label = np.sum(y_pred != y_pred_last).astype(np.float32) / y_pred.shape[0]
