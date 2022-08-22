@@ -99,7 +99,7 @@ class SEDR(nn.Module):
         mu, logvar, mu2, logvar2 = self.encode(x, adj)
         gnn_z = self.reparameterize(mu, logvar)
         feat_x = self.reparameterize(mu2, logvar2)
-        z = torch.cat((vae_z, gnn_z), 1)
+        z = torch.cat((feat_x, gnn_z), 1)
         de_feat = self.decoder(z)
 
         # DEC clustering
