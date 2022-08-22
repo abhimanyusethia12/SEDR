@@ -87,10 +87,10 @@ if params.using_dec:
     sedr_net.train_with_dec()
 else:
     sedr_net.train_without_dec()
-sedr_feat, _, _, _ = sedr_net.process()
+sedr_feat, _, _, _, de_feat = sedr_net.process()
 
 np.savez(os.path.join(params.save_path, "SEDR_result.npz"), sedr_feat=sedr_feat, deep_Dim=params.feat_hidden2)
-
+np.savez(os.path.join(params.save_path, "SEDR_DE_result.npz"), sedr_feat=de_feat, deep_Dim=params.cell_feat_dim)
 # ################## Result plot
 adata_sedr = anndata.AnnData(sedr_feat)
 adata_sedr.uns['spatial'] = adata_h5.uns['spatial']
