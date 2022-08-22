@@ -65,8 +65,8 @@ class SEDR(nn.Module):
         self.encoder = nn.Sequential()
         self.encoder.add_module('encoder_L1', full_block(input_dim, params.feat_hidden1, params.p_drop))
         self.encoder.add_module('encoder_L2', full_block(params.feat_hidden1, params.feat_hidden2, params.p_drop))
-        self.encFC1 = nn.Linear(params.feat_hidden2, params.gcn_hidden2)
-        self.encFC2 = nn.Linear(params.feat_hidden2, params.gcn_hidden2)
+        self.encmu = nn.Linear(params.feat_hidden2, params.feat_hidden2)
+        self.encvar = nn.Linear(params.feat_hidden2, params.feat_hidden2)
         
         self.decoder = nn.Sequential()
         self.decoder.add_module('decoder_L0', full_block(self.latent_dim, input_dim, params.p_drop))
@@ -85,7 +85,7 @@ class SEDR(nn.Module):
         feat_x = self.encoder(x)
         hidden1 = self.gc1(feat_x, adj)
         #return self.gc2(hidden1, adj), self.gc3(hidden1, adj), self.encodermu()
-        return self.gc2(hidden1, adj), self.gc3(hidden1, adj), self.encFC1(feat_x), self.encFC2(feat_x) 
+        return self.gc2(hidden1, adj), self.gc3(hidden1, adj), self.encmu(feat_x), self.encvar(feat_x)
 
     def reparameterize(self, mu, logvar):
         if self.training:
@@ -98,7 +98,7 @@ class SEDR(nn.Module):
     def forward(self, x, adj):
         mu, logvar, mu2, logvar2 = self.encode(x, adj)
         gnn_z = self.reparameterize(mu, logvar)
-        vae_z = self.reparameterize(mu2, logvar2)
+        feat_x = self.reparameterize(mu2, logvar2)
         z = torch.cat((vae_z, gnn_z), 1)
         de_feat = self.decoder(z)
 
